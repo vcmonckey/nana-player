@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>nana player</title>
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: sans-serif; padding:20px; }
+
+.player-wrap {
+  border: 1px solid #ccc;
+  border-radius: 12px;
+  max-width: 380px;
+  margin: 1rem auto;
+  overflow: hidden;
+}
+
+.controls-area { padding: 16px; }
+
+.seek-row {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 14px;
+}
+
+input[type=range] { flex: 1; }
+
+button { margin: 4px; }
+
+</style>
+</head>
+
+<body>
+
+<h2>nana player</h2>
+
+<input id="url-input" placeholder="https://nana-music.com/sounds/..." style="width:70%">
+<button onclick="loadSound()">読み込む</button>
+
+<div class="player-wrap">
+
+  <div class="controls-area">
+
+    <div id="title">---</div>
+
+    <audio id="player" controls></audio>
+
+    <div class="seek-row">
+      <span id="time-cur">0:00</span>
+      <input type="range" id="seekbar" min="0" max="100" value="0">
+      <span id="time-dur">0:00</span>
+    </div>
+
+    <button onclick="skip(-10)">⏪10秒</button>
+    <button onclick="togglePlay()">▶ / ⏸</button>
+    <button onclick="skip(10)">⏩10秒</button>
+    <button onclick="toggleLoop()">🔁ループ</button>
+
+  </div>
+
+</div>
+
+<script>
+
+const audio = document.getElementById('player');
+let loopEnabled = false;
+
+// ⭐ここが重要（サーバー経由）
+async function loadSound() {
+  const url = document.getElementById('url-input').value.trim();
+
+  const res = await fetch(`/api/fetch?url=${encodeURIComponent(url)}`);
+  const data = await res.json();
+  const html = data.html;
+
+  const audioMatch = html.match(/https:\/\/storage2\.nana-music\.com\/sound\/[^"'\s]+\.m4a/);
+  const titleMatch = html.match(/<title>(.*?)<\/title>/);
+
+  if (!audioMatch) {
+    alert("音声URL見つからん");
+    return;
+  }
+
+  audio.src = audioMatch[0];
+
+  if (titleMatch) {
+    document.getElementById("title").innerText = titleMatch[1];
+  }
+
+  audio.play();
+}
+
+function togglePlay() {
+  if (audio.paused) audio.play();
+  else audio.pause();
+}
+
+function toggleLoop() {
+  loopEnabled = !loopEnabled;
+  audio.loop = loopEnabled;
+  alert("ループ：" + loopEnabled);
+}
+
+function skip(sec) {
+  audio.currentTime += sec;
+}
+
+function formatTime(s) {
+  const m = Math.floor(s / 60);
+  const sec = Math.floor(s % 60);
+  return m + ":" + String(sec).padStart(2, '0');
+}
+
+audio.addEventListener('timeupdate', () => {
+  const cur = audio.currentTime;
+  const dur = audio.duration || 0;
+
+  document.getElementById('time-cur').textContent = formatTime(cur);
+  document.getElementById('time-dur').textContent = formatTime(dur);
+
+  document.getElementById('seekbar').value = dur ? (cur / dur * 100) : 0;
+});
+
+document.getElementById('seekbar').addEventListener('change', e => {
+  if (audio.duration) {
+    audio.currentTime = e.target.value / 100 * audio.duration;
+  }
+});
+
+</script>
+
+</body>
+</html>
