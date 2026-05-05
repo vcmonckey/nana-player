@@ -134,6 +134,10 @@ if (sharedUrl) {
   document.getElementById("url-input").value = sharedUrl;
   loadSound();
 }
+  
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js');
+}
 </script>
 
 </body>
