@@ -126,7 +126,13 @@ document.getElementById('seekbar').addEventListener('change', e => {
     audio.currentTime = e.target.value / 100 * audio.duration;
   }
 });
+const params = new URLSearchParams(location.search);
+const sharedUrl = params.get("url");
 
+if (sharedUrl) {
+  document.getElementById("url-input").value = sharedUrl;
+  loadSound();
+}
 </script>
 
 </body>
